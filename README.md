@@ -80,3 +80,13 @@ cd ~/Projects/nextgen-worship-site
 - 진짜 비공개(인증 필요 사이트)는 **GitHub Pro/Team** 유료 + private repo Pages가 필요. 현재는 박사님 "링크 아는 사람만" 의도에 맞춘 noindex public 방식.
 - 레포가 public이므로 **민감정보(실명·가정사) 절대 포함 금지** — 콘텐츠는 이미 호칭 추상화됨(룸 규칙 준수).
 - 커스텀 도메인 원하면 추후 `CNAME` 파일 + DNS 설정으로 가능.
+
+---
+
+## 🔒 주간 갱신 = 반드시 `./safe_deploy.sh` (2026-07-03)
+
+외부 공개 후에는 raw `deploy.sh` 대신 **`./safe_deploy.sh`** 로 배포한다.
+- 배포 전 민감정보 스캔(실명·연락처·학교·탈북 식별디테일·명명된 사역자) 자동 실행.
+- 통과 시에만 push. 실패 시 중단 + `~/.intimyai/NEXTGEN_DEPLOY_BLOCKED` 플래그 + master 알림.
+- 미래 주차에 탈북 간증 게스트 실명 등이 재유입돼도 자동 발행 차단.
+- 익명화 원칙: 발행 경계에서 실명→직함/'한 …님', 식별 디테일 순화(간증 뼈대 보존).
