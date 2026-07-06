@@ -18,7 +18,7 @@ fi
 echo "[1/4] 소스 → 배포 레포 동기화 (HTML만, 삭제분도 반영)"
 # .git / .nojekyll / deploy.sh / README.md 는 보존, html 트리만 거울복사
 rsync -a --delete \
-  --include='*/' --include='*.html' --exclude='*' \
+  --exclude='.git/' --include='*/' --include='*.html' --exclude='*' \
   "$SRC/" "$DEST/"
 
 # Jekyll 우회 마커 보장
