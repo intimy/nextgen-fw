@@ -32,7 +32,8 @@ if git diff --quiet && git diff --cached --quiet && [ -z "$(git ls-files --other
 fi
 
 echo "[3/4] 커밋"
-git add -A
+# add 범위 한정(글로벌 규범: git add -A 금지 — 2026-07-16 .DS_Store 유입 사고로 교정)
+git add -A -- '*.html' 부서 허브 .nojekyll .gitignore 2>/dev/null || git add -- '*.html'
 MSG="update $(date +%Y-%m-%d)"
 if [ "${1:-}" != "" ]; then MSG="$MSG — $1"; fi
 git -c core.editor=true commit -m "$MSG"
