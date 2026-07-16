@@ -36,12 +36,13 @@ escalate_jsonl() { # $1=msg
 if [ "$hits" -gt 0 ]; then
   echo "🔴 게이트 실패 — $hits 항목. 배포 중단(push 안 함). 익명화 후 재실행하세요."
   touch "$FLAG"
-  escalate_jsonl "자동배포 게이트 차단 — 민감정보 $hits건 검출, push 중단. 익명화 후 재실행 필요."
+  escalate_jsonl "자동배포 게이트 차단 — 민감정보 ${hits}건 검출, push 중단. 익명화 후 재실행 필요."
   exit 1
 fi
 echo "[게이트] ✅ 통과 — 배포 진행"
-if ! "$DEST/deploy.sh" "${1:-주간 자동 갱신}"; then
-  rc=$?
-  escalate_jsonl "배포 실패(rc=$rc) — 게이트는 통과했으나 rsync/commit/push 단계 오류. nextgen_deploy.log 확인 필요."
+rc=0
+"$DEST/deploy.sh" "${1:-주간 자동 갱신}" || rc=$?
+if [ "$rc" -ne 0 ]; then
+  escalate_jsonl "배포 실패(rc=${rc}) — 게이트는 통과했으나 rsync/commit/push 단계 오류. nextgen_deploy.log 확인 필요."
   exit "$rc"
 fi
