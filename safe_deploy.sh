@@ -34,14 +34,30 @@ scan() { # $1=설명 $2=grep패턴(-E)
 }
 # 1) 기존 익명화 대상 재유입 가드
 scan "기존실명 재유입" '최승혁|현비파|이은성'
-# 2) 명명된 사역자(실명+직함) — '님'이 없어도, 어떤 직함이어도 잡는다.
-#    2026-08-17 실사고: 구 패턴은 '님'이 필수라 '김세현 목사'(님 없음)를 4주간 놓쳤고,
-#    '강도사'·'학생' 직함은 패턴에 아예 없어 미성년 실명이 그대로 발행됐다.
-#    제외 목록은 '이름이 아닌 말 + 직함'만이다(담임목사·고등학생 등).
-NAMED_TITLE='[가-힣]{2,4} ?(목사|전도사|강도사|선교사|집사|권사|장로|학생|청년|형제|자매)님?'
-NOT_A_NAME='(담임|부담임|우리|저희|강사|협동|원로|은퇴|선임|초청|영아|유아|유치|유년|초등|소년|중등|고등|청년|장년|대학|탈북민|새가족|어린이|청소년|전교인|온교회|교육) ?(목사|전도사|강도사|선교사|집사|권사|장로|학생|청년|형제|자매)님?|한 (탈북민 )?(전도사|선교사|목사|학생)님?|부목사님'
-nm=$(grep -rnoE "$NAMED_TITLE" "$SRC" --include='*.html' 2>/dev/null | grep -vE "$NOT_A_NAME" | head -8)
-[ -n "$nm" ] && { echo "  ⚠️ [명명된 사역자·학생 실명] 검토 필요:"; echo "$nm" | sed 's/^/       /'; hits=$((hits+1)); }
+# 2) 명명된 사역자·학생 실명 — 판별식을 여기 두지 않는다.
+#    익명화(fetch_videos.py)와 게이트가 서로 다른 정규식을 들고 있으면 판정이 갈린다.
+#    실제로 2026-08-17에 두 번 데었다: ①게이트가 낡아 실명 7건을 4주간 통과시켰고,
+#    ②고친 게이트가 이번엔 산문("친구나 형제"·"특정 목사님")을 실명으로 오탐해 배포를 막았다.
+#    이제 양쪽 다 name_rules.py 한 곳의 술어를 쓴다(성씨 기반 판별).
+NAME_SCAN="$HOME/.intimyai/rooms/nextgen_hub/name_scan.py"
+if [ ! -f "$NAME_SCAN" ]; then
+  echo "🔴 게이트 실패 — 실명 판별기 없음: $NAME_SCAN. 배포 중단."
+  touch "$FLAG"
+  printf '{"ts":"%s","src":"nextgen_deploy","msg":"%s"}\n' \
+    "$(date +%Y-%m-%dT%H:%M:%S%z)" "자동배포 게이트 차단 — 실명 판별기 부재($NAME_SCAN), push 중단." \
+    >> "$HOME/.intimyai/_escalations.jsonl"
+  exit 1
+fi
+nm=$(/opt/homebrew/bin/python3 "$NAME_SCAN" "$SRC" 2>&1); nm_rc=$?
+if [ "$nm_rc" -eq 3 ]; then
+  echo "🔴 게이트 실패 — 실명 스캔 불능:"; echo "$nm" | sed 's/^/       /'
+  touch "$FLAG"
+  printf '{"ts":"%s","src":"nextgen_deploy","msg":"%s"}\n' \
+    "$(date +%Y-%m-%dT%H:%M:%S%z)" "자동배포 게이트 차단 — 실명 스캔 불능, push 중단." \
+    >> "$HOME/.intimyai/_escalations.jsonl"
+  exit 1
+fi
+[ "$nm_rc" -eq 2 ] && { echo "  ⚠️ [명명된 사역자·학생 실명] 검토 필요:"; echo "$nm" | sed 's/^/       /'; hits=$((hits+1)); }
 # 3) 연락처·주소·학교
 scan "전화번호" '01[0-9][-. ][0-9]{3,4}[-. ][0-9]{4}'
 scan "이메일" '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|net|kr|org)'
